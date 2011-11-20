@@ -29,3 +29,12 @@ CREATE TABLE book
 	CONSTRAINT FK_book_owner FOREIGN KEY (owner_id)
 		REFERENCES user (user_id) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE book_content
+(
+	book_id INTEGER NOT NULL,
+	book_text LONGTEXT,
+        book_short_text TEXT,
+	CONSTRAINT FK_book_id FOREIGN KEY (book_id)
+		REFERENCES book (book_id) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
