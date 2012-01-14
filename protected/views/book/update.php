@@ -15,4 +15,4 @@ $this->menu=array(
 
 <h1>Update Book <?php echo $model->book_id; ?></h1>
 
-<?php echo $this->renderPartial('_form', array('model'=>$model)); ?>
+<?php echo $this->renderPartial('_form', array('model'=>$model, 'author_list' => $author_list)); ?>

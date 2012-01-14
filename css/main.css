@@ -47,6 +47,25 @@ body
 	font-size: 200%;
 }
 
+#logo a {
+    color: black;
+    text-decoration: none;
+    top: -30px;
+    position: relative;
+}
+
+#auth
+{
+	padding: 10px 20px;
+        float: right;
+        margin-top: -50px;
+}
+
+#auth a {
+    color: black;
+    text-decoration: none;
+}
+
 #mainmenu
 {
 	background:white url(bg.gif) repeat-x left top;
@@ -226,4 +245,10 @@ div.search-form
 .operations li a:hover
 {
 	background: #80CFFF;
+}
+
+#alphabet_menu a {
+    font-weight: bold;
+    font-size: 160%;
+    text-decoration: none;
 }

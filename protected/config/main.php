@@ -80,5 +80,8 @@ return array(
     'params' => array(
         // this is used in contact page
         'adminEmail' => 'webmaster@example.com',
+        'siteURL' => 'http://localhost:81/mybook',
+        'webRoot' => dirname(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'),
+        'uploadsDir' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..\..' . '\uploads\books',
     ),
 );

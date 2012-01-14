@@ -1,15 +1,12 @@
 <?php
 
-class BookController extends Controller {
+class AuthorController extends Controller {
 
     /**
      * @var string the default layout for the views. Defaults to '//layouts/column2', meaning
      * using two-column layout. See 'protected/views/layouts/column2.php'.
      */
     public $layout = '//layouts/column2';
-
-
-    const PAGE_LENGHT = 8750;
 
     /**
      * @return array action filters
@@ -32,7 +29,12 @@ class BookController extends Controller {
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
+                'actions' => array('create', 'update'),
                 'users' => array('@'),
+            ),
+            array('allow', // allow admin user to perform 'admin' and 'delete' actions
+                'actions' => array('admin', 'delete'),
+                'users' => array('admin'),
             ),
             array('deny', // deny all users
                 'users' => array('*'),
@@ -45,8 +47,17 @@ class BookController extends Controller {
      * @param integer $id the ID of the model to be displayed
      */
     public function actionView($id) {
+        $author = $this->loadModel($id);
+        $author_books = new CArrayDataProvider($author->books,
+                        array('keyField' => 'book_id',
+                            'pagination' => array('pageSize' => 5,
+                            ),
+                ));
+        //var_dump($author_books);die;
+        //$author_books = new CActiveDataProvider("Book");
         $this->render('view', array(
-            'model' => $this->loadModel($id),
+            'model' => $author,
+            'books' => $author_books,
         ));
     }
 
@@ -55,56 +66,20 @@ class BookController extends Controller {
      * If creation is successful, the browser will be redirected to the 'view' page.
      */
     public function actionCreate() {
-        $model = new Book;
-        $author = new Author();
+        $model = new Author;
 
         // Uncomment the following line if AJAX validation is needed
         // $this->performAjaxValidation($model);
 
-        if (isset($_POST['Book'])) {
-            $model->attributes = $_POST['Book'];
-            $model->book_file_name = CUploadedFile::getInstance($model, 'book_file_name');
-            if ($model->save()) {
-                if ($model->book_file_name->saveAs('uploads/books/' . $model->book_file_name->getName()))
-                    $this->saveBookContent($model);
-                $this->redirect(array('view', 'id' => $model->book_id));
-            }
+        if (isset($_POST['Author'])) {
+            $model->attributes = $_POST['Author'];
+            if ($model->save())
+                $this->redirect(array('view', 'id' => $model->author_id));
         }
 
         $this->render('create', array(
             'model' => $model,
-            'author_list' => $author->getAuthorList(),
         ));
-    }
-
-    protected function saveBookContent($model) {
-        if ($model->book_file_name) {
-
-            $filename = Yii::app()->params['uploadsDir'] . "\\" . $model->book_file_name;
-            if (file_exists($filename)) {
-                $f_handle = fopen($filename, 'r');
-                $f_contents = mysql_real_escape_string(fread($f_handle, filesize($filename)));
-                // $f_contents = iconv("CP1251", "utf-8//IGNORE",  $f_contents);
-                fclose($f_handle);
-                $from = 0;
-                $lenght = self::PAGE_LENGHT;
-                $book_lenhgt = strlen($f_contents);
-                $page_nr = 1;
-                do {
-                    $book_page = new BookContent();
-                    $book_page->book_page_nr = $page_nr;
-                    $page_text = substr($f_contents, $from, $lenght);
-                    $book_page->book_text = $page_text;
-                    $book_page->belong_to = $model->book_id;
-                    $book_page->save(false);
-                    $page_nr++;
-                    $from = $lenght - 1;
-                    $lenght += self::PAGE_LENGHT;
-                    if ($lenght > $book_lenhgt)
-                        $lenght = $book_lenhgt;
-                } while ($lenght != $book_lenhgt);
-            }
-        };
     }
 
     /**
@@ -114,22 +89,18 @@ class BookController extends Controller {
      */
     public function actionUpdate($id) {
         $model = $this->loadModel($id);
-        $author = new Author();
 
         // Uncomment the following line if AJAX validation is needed
         // $this->performAjaxValidation($model);
 
-        if (isset($_POST['Book'])) {
-            $model->attributes = $_POST['Book'];
-            $model->book_status = $_POST['Book']['book_status'];
-            $model->book_author = $_POST['Book']['book_author'];
+        if (isset($_POST['Author'])) {
+            $model->attributes = $_POST['Author'];
             if ($model->save())
-                $this->redirect(array('view', 'id' => $model->book_id));
+                $this->redirect(array('view', 'id' => $model->author_id));
         }
 
         $this->render('update', array(
             'model' => $model,
-            'author_list' => $author->getAuthorList(),
         ));
     }
 
@@ -155,20 +126,18 @@ class BookController extends Controller {
      * Lists all models.
      */
     public function actionIndex() {
-        $criteria = new CDbCriteria(array(
-                    'condition' => 'book_status=' . Book::STATUS_PUBLIC,
-                    'order' => 'vote DESC',
-                ));
-        //if (isset($_GET['tag']))
-        //    $criteria->addSearchCondition('tags', $_GET['tag']);
+        if (isset($_GET['l']))
+            $l = trim($_GET['l']);
+        else
+            $l = 'a';
+        $criteria = new CDbCriteria;
 
-        $dataProvider = new CActiveDataProvider('Book', array(
-                    'pagination' => array(
-                        'pageSize' => 5,
-                    ),
-                    'criteria' => $criteria,
-                ));
-
+        $criteria->condition = 'autor_last_name LIKE \'' . $l . '%\'';
+        $dataProvider = new CActiveDataProvider('Author', array(
+                    'criteria' => array(
+                        'condition' => 'author_last_name LIKE \'' . $l . '%\'',
+                        'order' => 'author_last_name DESC',
+                        )));
         $this->render('index', array(
             'dataProvider' => $dataProvider,
         ));
@@ -178,10 +147,10 @@ class BookController extends Controller {
      * Manages all models.
      */
     public function actionAdmin() {
-        $model = new Book('search');
+        $model = new Author('search');
         $model->unsetAttributes();  // clear any default values
-        if (isset($_GET['Book']))
-            $model->attributes = $_GET['Book'];
+        if (isset($_GET['Author']))
+            $model->attributes = $_GET['Author'];
 
         $this->render('admin', array(
             'model' => $model,
@@ -194,7 +163,7 @@ class BookController extends Controller {
      * @param integer the ID of the model to be loaded
      */
     public function loadModel($id) {
-        $model = Book::model()->findByPk($id);
+        $model = Author::model()->findByPk($id);
         if ($model === null)
             throw new CHttpException(404, 'The requested page does not exist.');
         return $model;
@@ -205,29 +174,10 @@ class BookController extends Controller {
      * @param CModel the model to be validated
      */
     protected function performAjaxValidation($model) {
-        if (isset($_POST['ajax']) && $_POST['ajax'] === 'book-form') {
+        if (isset($_POST['ajax']) && $_POST['ajax'] === 'author-form') {
             echo CActiveForm::validate($model);
             Yii::app()->end();
         }
     }
-
-    public function actionRead($id) {
-        $model = $this->loadModel($id);
-        $criteria = new CDbCriteria(array(
-                    'condition' => 'belong_to=' . $id,
-                    'order' => 'book_page_nr ASC',
-                ));
-        $model_content = new CActiveDataProvider('BookContent',
-                        array('pagination' => array('pageSize' => 1,
-                            ),
-                            'criteria' => $criteria,
-                ));
-        $this->render('read', array(
-            'model' => $model,
-            'model_content' => $model_content,
-        ));
-    }
-    
-
 
 }

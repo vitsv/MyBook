@@ -12,8 +12,21 @@
  * @property integer $book_update_time
  * @property integer $owner_id
  * @property string $book_short_description
+ * @property integer $book_author
+ * @property string $book_file_name
+ * @property integer $vote
+ *
+ * The followings are the available model relations:
+ * @property TblUsers $owner
+ * @property Author $bookAuthor
  */
 class Book extends CActiveRecord {
+    const STATUS_PUBLIC = 1;
+    const STATUS_PRIVATE = 2;
+
+
+
+    //public $book_file_name;
 
     /**
      * Returns the static model of the specified AR class.
@@ -37,11 +50,14 @@ class Book extends CActiveRecord {
         // NOTE: you should only define rules for those attributes that
         // will receive user inputs.
         return array(
+            array('book_title, book_short_description, book_author', 'required'),
             array('book_title', 'length', 'max' => 128),
+            //array('book_author', 'length', 'max' => 100),
             array('book_tags, book_short_description', 'safe'),
             // The following rule is used by search().
             // Please remove those attributes that should not be searched.
             array('book_title, book_tags, book_short_description', 'safe', 'on' => 'search'),
+            array('book_file_name', 'file', 'types' => 'txt', 'allowEmpty' => true, 'maxSize' => 1024 * 1024 * 5),
         );
     }
 
@@ -52,6 +68,8 @@ class Book extends CActiveRecord {
         // NOTE: you may need to adjust the relation name and the related
         // class name for the relations automatically generated below.
         return array(
+            'owner' => array(self::BELONGS_TO, 'TblUsers', 'owner_id'),
+            'bookAuthor' => array(self::BELONGS_TO, 'Author', 'book_author'),
         );
     }
 
@@ -68,6 +86,8 @@ class Book extends CActiveRecord {
             'book_update_time' => 'Book Update Time',
             'owner_id' => 'Owner',
             'book_short_description' => 'Book Short Description',
+            'book_author' => 'Book Author',
+            'book_file_name' => 'Please attach a books file (txt only)'
         );
     }
 
@@ -89,6 +109,7 @@ class Book extends CActiveRecord {
         $criteria->compare('book_update_time', $this->book_update_time);
         $criteria->compare('owner_id', $this->owner_id);
         $criteria->compare('book_short_description', $this->book_short_description, true);
+        $criteria->compare('book_author', $this->book_author);
 
         return new CActiveDataProvider($this, array(
                     'criteria' => $criteria,
@@ -100,7 +121,6 @@ class Book extends CActiveRecord {
             if ($this->isNewRecord) {
                 $this->book_create_time = $this->book_update_time = time();
                 $this->owner_id = Yii::app()->user->id;
-                $this->book_status = 1;
             }
             else
                 $this->book_update_time = time();
@@ -110,11 +130,20 @@ class Book extends CActiveRecord {
             return false;
     }
 
+    protected function afterSave() {
+       
+    }
+
     public function getUrl() {
-        return Yii::app()->createUrl('post/view', array(
+        return Yii::app()->createUrl('book/view', array(
                     'id' => $this->book_id,
                     'title' => $this->book_title,
                 ));
+    }
+
+    public static function getStatusList() {
+        return array(self::STATUS_PUBLIC => 'Public',
+            self::STATUS_PRIVATE => 'Private');
     }
 
 }

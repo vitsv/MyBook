@@ -1,0 +1,7 @@
+MyBook v. 0.1 Beta
+
+Instalacja
+1. Skopiowañ zawatosc katalogu na serwer
+2. Katalogom /assets, uploads/books, protected/runtime nadac prawa na zapis
+3. Dump bazy dancyh znajudje sie w katalogu /protected/data
+4. Standardowy uzytkownik: login: admin, haslo: admin
